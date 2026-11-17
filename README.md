@@ -2,8 +2,6 @@
 
 A full cab-booking web app (Ola/Uber style) with fare engine, live ride simulation and trip history. Built with **HTML, CSS and vanilla JavaScript** (no frameworks, no backend).
 
-**Live demo:** https://YOUR-USERNAME.github.io/ridenow/
-
 ## Features
 - Pickup / drop selection across 12 real Delhi-NCR landmarks with GPS coordinates
 - **Distance calculation** using the Haversine formula (with a road-distance factor)
