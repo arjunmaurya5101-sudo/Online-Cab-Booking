@@ -10,6 +10,7 @@ A full cab-booking web app (Ola/Uber style) with fare engine, live ride simulati
 - **Promo codes** (`FIRST50`, `SAVE20`) and payment options (Cash / UPI / Card / Wallet)
 - **Ride now or schedule for later**, with cancellation of scheduled rides
 - **Live ride simulation:** driver search → driver assigned (name, car, plate, rating, OTP) → arriving → on trip → arrived, with an animated car on a custom **Canvas map**
+- **Animations:** radar search with cars converging on the pickup, marching-ants route, pulsing pins, glowing car with motion trail, animated fare count-up, sliding panels and a confetti celebration
 - Receipt with full fare breakdown and driver rating
 - **Ride history & stats** (rides, total spent, distance, average rating) saved in `localStorage`
 - Responsive layout and automatic dark mode
