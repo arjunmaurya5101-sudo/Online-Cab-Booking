@@ -62,11 +62,45 @@ canvas{width:100%;height:auto;display:block;border-radius:14px;border:1px solid 
 .Completed{background:var(--green)}.Cancelled{background:var(--red)}.Scheduled{background:#4361ee}
 .empty{text-align:center;color:var(--muted);padding:30px}
 .center{text-align:center}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 #ffc62966}50%{box-shadow:0 0 0 10px #ffc62900}}
+@keyframes ring{from{transform:scale(.3);opacity:.9}to{transform:scale(1.6);opacity:0}}
+@keyframes fall{to{transform:translateY(560px) rotate(720deg);opacity:0}}
+@keyframes drive{0%{transform:translateX(-6px)}100%{transform:translateX(6px)}}
+#s-book,#s-search,#s-ride,#s-done{animation:slideIn .45s cubic-bezier(.2,.8,.2,1)}
+.layout .mapbox{animation:fadeUp .6s .1s both}
+header h1 b{display:inline-block;animation:drive .9s ease-in-out infinite alternate}
+.type{transition:transform .2s,box-shadow .2s,border-color .2s,background .2s}
+.type:hover{transform:translateX(5px);border-color:#ffc62999}
+.type.on{box-shadow:0 6px 18px #ffc62955;transform:scale(1.02)}
+.type.on .ic{animation:pop .4s}
+.cta{transition:transform .15s,box-shadow .2s;position:relative;overflow:hidden}
+.cta:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 20px #ffc62966}
+.cta:active:not(:disabled){transform:scale(.97)}
+.cta:not(.red):not(:disabled)::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,#fff7,transparent);transform:skewX(-20deg);animation:shine 3s infinite}
+@keyframes shine{to{left:130%}}
+.radar{position:relative;width:110px;height:110px;margin:16px auto}
+.radar i{position:absolute;inset:0;border:3px solid var(--y);border-radius:50%;animation:ring 2s infinite}
+.radar i:nth-child(2){animation-delay:.66s}.radar i:nth-child(3){animation-delay:1.33s}
+.radar b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.4rem}
+.drv{animation:fadeUp .5s .1s both}.otp{animation:glow 2s infinite}
+.bar div{transition:width .25s linear}
+.steps span{transition:color .4s,transform .4s}.steps span.on{transform:scale(1.12)}
+#s-done{position:relative;overflow:hidden}
+#s-done>div:first-child{animation:pop .7s}
+.cf{position:absolute;top:-14px;width:8px;height:13px;border-radius:2px;animation:fall linear forwards;pointer-events:none}
+.ride,.stats .box{animation:fadeUp .45s both}
+.ride:nth-child(2),.stats .box:nth-child(2){animation-delay:.07s}.ride:nth-child(3),.stats .box:nth-child(3){animation-delay:.14s}
+.ride:nth-child(4),.stats .box:nth-child(4){animation-delay:.21s}.ride:nth-child(n+5){animation-delay:.28s}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <header>
-  <h1>🚕 Ride<span>Now</span></h1>
+  <h1><b>🚕</b> Ride<span>Now</span></h1>
   <nav><button class="on" data-v="book">Book a ride</button><button data-v="hist">My rides</button></nav>
 </header>
 <main>
@@ -94,7 +128,7 @@ canvas{width:100%;height:auto;display:block;border-radius:14px;border:1px solid 
       <button class="cta" id="book-btn">Book ride</button>
     </div>
     <!-- STEP 2: searching -->
-    <div id="s-search" class="hide center"><div class="spin"></div><h2>Finding your driver…</h2><p class="msg">Connecting you with nearby drivers</p><button class="cta red" id="cancel-s">Cancel</button></div>
+    <div id="s-search" class="hide center"><div class="radar"><i></i><i></i><i></i><b>🚕</b></div><h2>Finding your driver…</h2><p class="msg">Connecting you with nearby drivers</p><button class="cta red" id="cancel-s">Cancel</button></div>
     <!-- STEP 3: active ride -->
     <div id="s-ride" class="hide">
       <h2 id="r-title"></h2><div class="msg" id="r-eta"></div>
@@ -174,7 +208,7 @@ function renderForm(){
   $("#types").innerHTML=TYPES.map(t=>{const f=calc(t,km);
     return `<div class="type ${t.id===S.type?"on":""}" data-t="${t.id}"><span class="ic">${t.ic}</span>
     <div class="n"><b>${t.n}</b> · ${t.seats} seat${t.seats>1?"s":""}<br><small>${t.note} · ${f.mins} min trip</small></div><b>${inr(f.total)}</b></div>`;}).join("");
-  const t=TYPES.find(x=>x.id===S.type);$("#fare").innerHTML=fareHTML(calc(t,km),km);
+  const t=TYPES.find(x=>x.id===S.type);$("#fare").innerHTML=fareHTML(calc(t,km),km);countUp(document.querySelector("#fare .tot span:last-child"));
   $("#book-btn").disabled=$("#pu").value===$("#dr").value;
   $("#book-btn").textContent=$("#when").value==="later"?"Schedule ride":"Book "+t.n;
   $("#badge").textContent=`${route().a.n} → ${route().b.n}`;
@@ -195,17 +229,30 @@ const P=l=>({x:(l.lo-B.lo0)/(B.lo1-B.lo0)*W,y:(B.la1-l.la)/(B.la1-B.la0)*H});
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const bez=(a,c,b,t)=>({x:(1-t)**2*a.x+2*(1-t)*t*c.x+t*t*b.x,y:(1-t)**2*a.y+2*(1-t)*t*c.y+t*t*b.y});
 const ctrl=(a,b,k)=>({x:(a.x+b.x)/2+(b.y-a.y)*k,y:(a.y+b.y)/2-(b.x-a.x)*k});
+let NOW=0;
+const cars=[...Array(7)].map(()=>{const l=P(LOC[Math.floor(Math.random()*LOC.length)]);return{x:l.x,y:l.y,tx:l.x,ty:l.y,a:0};});
+const pickT=c=>{const l=P(LOC[Math.floor(Math.random()*LOC.length)]);c.tx=l.x+(Math.random()-.5)*50;c.ty=l.y+(Math.random()-.5)*50;};
+function car(x,y,ang,sc){g.save();g.translate(x,y);g.rotate(ang);g.scale(sc,sc);g.fillStyle="#ffc629";g.strokeStyle="#000";g.lineWidth=2;g.beginPath();g.roundRect(-14,-8,28,16,5);g.fill();g.stroke();g.fillStyle="#000";g.fillRect(4,-6,6,12);g.restore();}
 function draw(){
   g.clearRect(0,0,W,H);g.fillStyle=css("--map");g.fillRect(0,0,W,H);
-  g.strokeStyle=css("--road");g.lineWidth=9;
+  g.strokeStyle=css("--road");g.lineWidth=9;g.lineCap="butt";
   for(let i=1;i<8;i++){g.beginPath();g.moveTo(0,i*H/8+(i%2?14:-14));g.lineTo(W,i*H/8);g.stroke();g.beginPath();g.moveTo(i*W/8,0);g.lineTo(i*W/8+(i%2?20:-20),H);g.stroke();}
   g.font="12px system-ui";
   LOC.forEach(l=>{const p=P(l);g.fillStyle=css("--muted");g.globalAlpha=.7;g.beginPath();g.arc(p.x,p.y,4,0,7);g.fill();g.fillText(l.n,p.x+7,p.y+4);g.globalAlpha=1;});
   const {a,b}=route(),pa=P(a),pb=P(b),c=ctrl(pa,pb,.12);
-  g.strokeStyle=css("--text");g.lineWidth=4;g.beginPath();g.moveTo(pa.x,pa.y);g.quadraticCurveTo(c.x,c.y,pb.x,pb.y);g.stroke();
-  pin(pa,"#1fa463","A");pin(pb,"#e04b4b","B");
-  if(S.anim){const m=S.anim.pos;g.save();g.translate(m.x,m.y);g.rotate(m.ang);g.fillStyle="#ffc629";g.strokeStyle="#000";g.lineWidth=2;
-    g.beginPath();g.roundRect(-14,-8,28,16,5);g.fill();g.stroke();g.fillStyle="#000";g.fillRect(4,-6,6,12);g.restore();}
+  const path=()=>{g.beginPath();g.moveTo(pa.x,pa.y);g.quadraticCurveTo(c.x,c.y,pb.x,pb.y);};
+  g.lineCap="round";path();g.strokeStyle=css("--text");g.globalAlpha=.12;g.lineWidth=12;g.stroke();g.globalAlpha=1;
+  path();g.setLineDash([12,10]);g.lineDashOffset=-NOW/35;g.strokeStyle="#ffb300";g.lineWidth=4;g.stroke();g.setLineDash([]);
+  if(!S.anim)cars.forEach(k=>{
+    const tx=S.searching?pa.x:k.tx,ty=S.searching?pa.y:k.ty,dx=tx-k.x,dy=ty-k.y,d=Math.hypot(dx,dy);
+    if(d<5){if(!S.searching)pickT(k);}else{const sp=S.searching?3.2:1.1;k.x+=dx/d*sp;k.y+=dy/d*sp;k.a=Math.atan2(dy,dx);}
+    g.globalAlpha=.9;car(k.x,k.y,k.a,.7);g.globalAlpha=1;});
+  if(S.searching)for(let i=0;i<3;i++){const r=(NOW/10+i*50)%150;g.strokeStyle="#ffc629";g.globalAlpha=1-r/150;g.lineWidth=3;g.beginPath();g.arc(pa.x,pa.y,r,0,7);g.stroke();g.globalAlpha=1;}
+  const pr=(NOW/45)%20;g.strokeStyle="#1fa463";g.globalAlpha=.6*(1-pr/20);g.lineWidth=3;g.beginPath();g.arc(pa.x,pa.y,11+pr,0,7);g.stroke();g.globalAlpha=1;
+  pin(pa,"#1fa463","A");pin({x:pb.x,y:pb.y-Math.abs(Math.sin(NOW/350))*6},"#e04b4b","B");
+  if(S.anim){const tr=S.anim.trail||[];
+    for(let i=1;i<tr.length;i++){g.strokeStyle="#ffc629";g.globalAlpha=i/tr.length*.7;g.lineWidth=2+i/tr.length*6;g.beginPath();g.moveTo(tr[i-1].x,tr[i-1].y);g.lineTo(tr[i].x,tr[i].y);g.stroke();}
+    g.globalAlpha=1;const m=S.anim.pos;g.shadowColor="#ffc629";g.shadowBlur=20;car(m.x,m.y,m.ang,1.2);g.shadowBlur=0;}
 }
 function pin(p,col,t){g.fillStyle=col;g.beginPath();g.arc(p.x,p.y,11,0,7);g.fill();g.fillStyle="#fff";g.font="bold 12px system-ui";g.textAlign="center";g.fillText(t,p.x,p.y+4);g.textAlign="left";}
 function animate(from,ctl,to,dur,onTick,onDone){
@@ -214,11 +261,11 @@ function animate(from,ctl,to,dur,onTick,onDone){
     if(!S.anim)return;
     const t=Math.min(1,(now-t0)/dur),e=t<.5?2*t*t:1-2*(1-t)**2;
     const p=bez(from,ctl,to,e),q=bez(from,ctl,to,Math.min(1,e+.01));
-    S.anim.pos={x:p.x,y:p.y,ang:Math.atan2(q.y-p.y,q.x-p.x)};draw();onTick(t);
+    S.anim.pos={x:p.x,y:p.y,ang:Math.atan2(q.y-p.y,q.x-p.x)};(S.anim.trail=S.anim.trail||[]).push({x:p.x,y:p.y});if(S.anim.trail.length>45)S.anim.trail.shift();onTick(t);
     if(t<1)S.anim.raf=requestAnimationFrame(f);else onDone();
   })(t0);
 }
-const stop=()=>{if(S.anim&&S.anim.raf)cancelAnimationFrame(S.anim.raf);S.anim=null;clearTimeout(S.timer);};
+const stop=()=>{S.searching=false;if(S.anim&&S.anim.raf)cancelAnimationFrame(S.anim.raf);S.anim=null;clearTimeout(S.timer);};
 
 /* ---------- ride flow ---------- */
 const panels=["s-book","s-search","s-ride","s-done"];
@@ -233,13 +280,13 @@ $("#book-btn").onclick=()=>{
     if(!$("#dt").value){alert("Pick a date and time");return;}
     ride.status="Scheduled";ride.date=new Date($("#dt").value).toISOString();hist.unshift(ride);save();
     alert("✅ Ride scheduled for "+new Date(ride.date).toLocaleString("en-IN")+". Check 'My rides'.");renderHist();return;}
-  S.ride=ride;show("s-search");
+  S.ride=ride;S.searching=true;show("s-search");
   S.timer=setTimeout(()=>startArrival(),3000);
 };
 $("#cancel-s").onclick=()=>{stop();finish("Cancelled");};
 $("#cancel-r").onclick=()=>{if(confirm("Cancel this ride?")){stop();finish("Cancelled");}};
 function setSteps(n){document.querySelectorAll("#steps span").forEach((s,i)=>s.classList.toggle("on",i<=n));}
-function startArrival(){
+function startArrival(){S.searching=false;
   const r=S.ride,a=P(LOC.find(l=>l.n===r.from)),b=P(LOC.find(l=>l.n===r.to));
   const start={x:Math.min(W-20,Math.max(20,a.x+(Math.random()>.5?1:-1)*(90+Math.random()*60))),y:Math.min(H-20,Math.max(20,a.y+(Math.random()>.5?1:-1)*(60+Math.random()*60)))};
   $("#d-name").textContent=r.driver;$("#d-rate").textContent=r.rate;$("#d-car").textContent=r.car;$("#d-plate").textContent=r.plate;$("#otp").textContent=r.otp;
@@ -258,7 +305,7 @@ function startArrival(){
 function showDone(){
   const r=S.ride;S.rating=0;
   $("#receipt").innerHTML=`<div><span>${r.from} → ${r.to}</span><span></span></div>`+fareHTMLfrom(r)+`<div><span>Paid via</span><span>${r.pay}</span></div>`;
-  document.querySelectorAll("#stars span").forEach(s=>s.classList.remove("on"));show("s-done");
+  document.querySelectorAll("#stars span").forEach(s=>s.classList.remove("on"));show("s-done");confetti();
 }
 function fareHTMLfrom(r){const keep=S.promo;S.promo=r.promo;const h=fareHTML(r.f,r.km);S.promo=keep;return h;}
 $("#stars").onclick=e=>{const i=[...$("#stars").children].indexOf(e.target);if(i<0)return;S.rating=i+1;[...$("#stars").children].forEach((s,j)=>s.classList.toggle("on",j<=i));};
@@ -285,7 +332,14 @@ document.querySelector("nav").onclick=e=>{const v=e.target.dataset.v;if(!v)retur
   document.querySelectorAll(".view").forEach(s=>s.classList.toggle("hide",s.id!==v));
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b===e.target));if(v==="hist")renderHist();};
 matchMedia("(prefers-color-scheme:dark)").onchange=draw;
-renderForm();renderHist();
+let lastTot=0;
+function countUp(el){const to=+el.textContent.replace(/[^\d]/g,""),from=lastTot||to;lastTot=to;const t0=performance.now();
+  (function f(n){const k=Math.min(1,(n-t0)/500),e=1-(1-k)**3;el.textContent=inr(from+(to-from)*e);if(k<1)requestAnimationFrame(f);})(t0);}
+function confetti(){const box=$("#s-done");for(let i=0;i<50;i++){const e=document.createElement("i");e.className="cf";
+  e.style.cssText=`left:${Math.random()*100}%;background:hsl(${Math.random()*360},90%,60%);animation-delay:${Math.random()*.5}s;animation-duration:${1.5+Math.random()*1.3}s`;
+  box.appendChild(e);setTimeout(()=>e.remove(),3200);}}
+function loop(t){NOW=t;draw();requestAnimationFrame(loop);}
+renderForm();renderHist();requestAnimationFrame(loop);
 </script>
 </body>
 </html>
